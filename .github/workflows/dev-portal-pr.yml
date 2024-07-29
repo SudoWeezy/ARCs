@@ -49,19 +49,8 @@ jobs:
 
     - name: Clone devportal repository
       if: env.changed_files != ''
-      uses: actions/checkout@v2
-      with:
-        repository: SudoWeezy/devportal
-        token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-        ref: main
-        path: devportal
-
-    - name: Check out devrel-content branch in devportal repo
-      if: env.changed_files != ''
       run: |
-        cd devportal
-        git fetch origin devrel-content
-        git checkout devrel-content
+        git clone --single-branch --branch devrel-content https://github.com/SudoWeezy/devportal devportal
 
     - name: Create a new branch in devportal repo
       if: env.changed_files != ''
@@ -81,8 +70,7 @@ jobs:
       uses: peter-evans/create-pull-request@v3
       with:
         token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-        repository: SudoWeezy/devportal
-        head: update-arcs-${{ github.sha }}
+        branch: update-arcs-${{ github.sha }}
         base: devrel-content
         title: 'Update ARCs files'
         body: 'Automated pull request to update ARCs files in devportal repo'
