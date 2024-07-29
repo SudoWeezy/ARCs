@@ -18,6 +18,8 @@ jobs:
     - name: Check for added or modified files
       id: check_changes
       run: |
+        set -e
+
         # Check if the previous commit reference is valid
         if git cat-file -e ${{ github.event.before }}^{commit} 2>/dev/null; then
           base_commit=${{ github.event.before }}
@@ -25,11 +27,16 @@ jobs:
           base_commit=$(git rev-list --max-parents=0 HEAD)
         fi
 
+        echo "Base commit: $base_commit"
+        echo "Current commit: ${{ github.sha }}"
+
         # Get the list of added or modified files
         changed_files=$(git diff --name-only $base_commit ${{ github.sha }})
+        echo "Changed files: $changed_files"
 
         # Check if any changed files are in the ARCs folder
-        relevant_files=$(echo "$changed_files" | grep '^ARCs/')
+        relevant_files=$(echo "$changed_files" | grep '^ARCs/' || true)
+        echo "Relevant files: $relevant_files"
 
         # Output the result
         if [ -n "$relevant_files" ]; then
