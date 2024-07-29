@@ -1,0 +1,60 @@
+name: Auto Create Pull Request
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'ARCs/**'  # Adjust this path to your specific folder
+
+jobs:
+  createPR:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Check for added or modified files
+      id: check_changes
+      run: |
+        # Get the list of added or modified files
+        changed_files=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+
+        # Check if any changed files are in the ARCs folder
+        relevant_files=$(echo "$changed_files" | grep '^ARCs/')
+
+        # Output the result
+        echo "::set-output name=changed_files::$relevant_files"
+
+    - name: Clone devportal repository
+      if: steps.check_changes.outputs.changed_files != ''
+      uses: actions/checkout@v2
+      with:
+        repository: SudoWeezy/devportal
+        token: ${{ secrets.GITHUB_TOKEN }}
+        path: devportal
+
+    - name: Create a new branch in devportal repo
+      if: steps.check_changes.outputs.changed_files != ''
+      run: |
+        cd devportal
+        git config --global user.name 'github-actions'
+        git config --global user.email 'github-actions@github.com'
+        git checkout -b update-arcs-${{ github.sha }}
+        mkdir -p src/content/docs/reference/ARCs
+        cp -r ../ARCs/* src/content/docs/reference/ARCs/
+        git add src/content/docs/reference/ARCs
+        git commit -m "Update ARCs files"
+        git push origin update-arcs-${{ github.sha }}
+
+    - name: Create Pull Request
+      if: steps.check_changes.outputs.changed_files != ''
+      uses: peter-evans/create-pull-request@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        repository: SudoWeezy/devportal
+        head: update-arcs-${{ github.sha }}
+        base: devrel-content
+        title: 'Update ARCs files'
+        body: 'Automated pull request to update ARCs files in devportal repo'
