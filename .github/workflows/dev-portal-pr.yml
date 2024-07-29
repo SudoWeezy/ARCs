@@ -65,13 +65,12 @@ jobs:
         git commit -m "Update ARCs files"
         git push origin update-arcs-${{ github.sha }}
 
-    - name: Create Pull Request in original devportal repo
+    - name: Create Pull Request
       if: env.changed_files != ''
       uses: peter-evans/create-pull-request@v3
       with:
         token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-        repository: SudoWeezy/devportal  # Specify the target repository
-        head: SudoWeezy:update-arcs-${{ github.sha }}  # Specify the branch in your fork
+        branch: update-arcs-${{ github.sha }}
         base: devrel-content
         title: 'Update ARCs files'
         body: 'Automated pull request to update ARCs files in devportal repo'
