@@ -53,12 +53,14 @@ jobs:
       with:
         repository: SudoWeezy/devportal
         token: ${{ secrets.GITHUB_TOKEN }}
+        ref: main
         path: devportal
 
     - name: Check out devrel-content branch in devportal repo
       if: env.changed_files != ''
       run: |
         cd devportal
+        git fetch origin devrel-content
         git checkout devrel-content
 
     - name: Create a new branch in devportal repo
