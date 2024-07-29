@@ -32,10 +32,12 @@ jobs:
         relevant_files=$(echo "$changed_files" | grep '^ARCs/')
 
         # Output the result
-        echo "::set-output name=changed_files::$relevant_files"
+        if [ -n "$relevant_files" ]; then
+          echo "changed_files=$relevant_files" >> $GITHUB_ENV
+        fi
 
     - name: Clone devportal repository
-      if: steps.check_changes.outputs.changed_files != ''
+      if: env.changed_files != ''
       uses: actions/checkout@v2
       with:
         repository: SudoWeezy/devportal
@@ -43,7 +45,7 @@ jobs:
         path: devportal
 
     - name: Create a new branch in devportal repo
-      if: steps.check_changes.outputs.changed_files != ''
+      if: env.changed_files != ''
       run: |
         cd devportal
         git config --global user.name 'github-actions'
@@ -56,7 +58,7 @@ jobs:
         git push origin update-arcs-${{ github.sha }}
 
     - name: Create Pull Request
-      if: steps.check_changes.outputs.changed_files != ''
+      if: env.changed_files != ''
       uses: peter-evans/create-pull-request@v3
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
