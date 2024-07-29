@@ -18,13 +18,11 @@ jobs:
     - name: Check for added or modified files
       id: check_changes
       run: |
-        set -e
-
-        # Check if the previous commit reference is valid
-        if git cat-file -e ${{ github.event.before }}^{commit} 2>/dev/null; then
-          base_commit=${{ github.event.before }}
-        else
+        # Ensure the previous commit reference is valid
+        if [ "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ]; then
           base_commit=$(git rev-list --max-parents=0 HEAD)
+        else
+          base_commit=${{ github.event.before }}
         fi
 
         echo "Base commit: $base_commit"
