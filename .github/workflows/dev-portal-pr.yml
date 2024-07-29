@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'ARCs/**'  # Adjust this path to your specific folder
+      - 'ARCs/**'
 
 jobs:
   createPR:
@@ -18,8 +18,11 @@ jobs:
     - name: Check for added or modified files
       id: check_changes
       run: |
+        # Get the base commit (merge base of current and previous commits)
+        base_commit=$(git merge-base ${{ github.event.before }} ${{ github.sha }})
+
         # Get the list of added or modified files
-        changed_files=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+        changed_files=$(git diff --name-only $base_commit ${{ github.sha }})
 
         # Check if any changed files are in the ARCs folder
         relevant_files=$(echo "$changed_files" | grep '^ARCs/')
