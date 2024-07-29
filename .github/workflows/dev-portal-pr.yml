@@ -67,11 +67,12 @@ jobs:
 
     - name: Create Pull Request in devportal repo
       if: env.changed_files != ''
-      uses: peter-evans/create-pull-request@v3
-      with:
-        token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-        repository: SudoWeezy/devportal
-        head: update-arcs-${{ github.sha }}
-        base: devrel-content
-        title: 'Update ARCs files'
-        body: 'Automated pull request to update ARCs files in devportal repo'
+      run: |
+        gh pr create \
+          --repo SudoWeezy/devportal \
+          --head update-arcs-${{ github.sha }} \
+          --base devrel-content \
+          --title 'Update ARCs files' \
+          --body 'Automated pull request to update ARCs files in devportal repo'
+      env:
+        GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
