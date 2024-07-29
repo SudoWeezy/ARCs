@@ -14,10 +14,14 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
+      with:
+        fetch-depth: 2
 
     - name: Check for added or modified files
       id: check_changes
       run: |
+        set -e
+        
         # Ensure the previous commit reference is valid
         if [ "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ]; then
           base_commit=$(git rev-list --max-parents=0 HEAD)
@@ -39,6 +43,8 @@ jobs:
         # Output the result
         if [ -n "$relevant_files" ]; then
           echo "changed_files=$relevant_files" >> $GITHUB_ENV
+        else
+          echo "No relevant files changed."
         fi
 
     - name: Clone devportal repository
