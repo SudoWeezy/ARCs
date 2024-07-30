@@ -5,74 +5,78 @@ on:
     branches:
       - main
     paths:
-      - 'ARCs/**'
+      - "ARCs/**"
+      - "assets/**"
 
 jobs:
   createPR:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout ARCs repository
-      uses: actions/checkout@v2
-      with:
-        fetch-depth: 2
+      - name: Checkout ARCs repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
 
-    - name: Check for added or modified files
-      id: check_changes
-      run: |
-        set -e
+      - name: Check for added or modified files
+        id: check_changes
+        run: |
+          set -e
 
-        # Ensure the previous commit reference is valid
-        if [ "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ]; then
-          base_commit=$(git rev-list --max-parents=0 HEAD)
-        else
-          base_commit=${{ github.event.before }}
-        fi
+          # Ensure the previous commit reference is valid
+          if [ "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ]; then
+            base_commit=$(git rev-list --max-parents=0 HEAD)
+          else
+            base_commit=${{ github.event.before }}
+          fi
 
-        echo "Base commit: $base_commit"
-        echo "Current commit: ${{ github.sha }}"
+          echo "Base commit: $base_commit"
+          echo "Current commit: ${{ github.sha }}"
 
-        # Get the list of added or modified files
-        changed_files=$(git diff --name-only $base_commit ${{ github.sha }})
-        echo "Changed files: $changed_files"
+          # Get the list of added or modified files
+          changed_files=$(git diff --name-only $base_commit ${{ github.sha }})
+          echo "Changed files: $changed_files"
 
-        # Check if any changed files are in the ARCs folder
-        relevant_files=$(echo "$changed_files" | grep '^ARCs/' || true)
-        echo "Relevant files: $relevant_files"
+          # Check if any changed files are in the ARCs or assets folder
+          relevant_files=$(echo "$changed_files" | grep -E '^ARCs/|^assets/' || true)
+          echo "Relevant files: $relevant_files"
 
-        # Output the result
-        if [ -n "$relevant_files" ]; then
-          echo "changed_files=$relevant_files" >> $GITHUB_ENV
-        else
-          echo "No relevant files changed."
-        fi
+          # Output the result
+          if [ -n "$relevant_files" ]; then
+            echo "changed_files=$relevant_files" >> $GITHUB_ENV
+          else
+            echo "No relevant files changed."
+          fi
 
-    - name: Clone devportal repository
-      if: env.changed_files != ''
-      run: |
-        git clone --single-branch --branch devrel-content https://${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/SudoWeezy/devportal devportal
+      - name: Clone devportal repository
+        if: env.changed_files != ''
+        run: |
+          git clone --single-branch --branch devrel-content https://${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/SudoWeezy/devportal devportal
 
-    - name: Create a new branch in devportal repo
-      if: env.changed_files != ''
-      run: |
-        cd devportal
-        git config --global user.name 'github-actions'
-        git config --global user.email 'github-actions@github.com'
-        git checkout -b update-arcs-${{ github.sha }}
-        mkdir -p src/content/docs/reference/ARCs
-        cp -r ../ARCs/* src/content/docs/reference/ARCs/
-        git add src/content/docs/reference/ARCs
-        git commit -m "Update ARCs files"
-        git push origin update-arcs-${{ github.sha }}
+      - name: Create a new branch in devportal repo
+        if: env.changed_files != ''
+        run: |
+          cd devportal
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+          git checkout -b update-content-${{ github.sha }}
+          mkdir -p src/content/docs/standards/ARCs
+          mkdir -p src/content/docs/standards/assets
+          cp -r ../ARCs/* src/content/docs/standards/ARCs/
+          find ../assets -type d -name "css" -prune -o -type f -exec cp --parents {} src/content/docs/standards/assets/ \;
+          git add src/content/docs/standards/ARCs
+          git add src/content/docs/standards/assets
+          git commit -m "Update ARCs and assets files"
+          git push origin update-content-${{ github.sha }}
 
-    - name: Create Pull Request in devportal repo
-      if: env.changed_files != ''
-      run: |
-        gh pr create \
-          --repo SudoWeezy/devportal \
-          --head update-arcs-${{ github.sha }} \
-          --base devrel-content \
-          --title 'Update ARCs files' \
-          --body 'Automated pull request to update ARCs files in devportal repo'
-      env:
-        GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+      - name: Create Pull Request in devportal repo
+        if: env.changed_files != ''
+        run: |
+          gh pr create \
+            --repo SudoWeezy/devportal \
+            --head update-content-${{ github.sha }} \
+            --base devrel-content \
+            --title 'Update ARCs and assets files' \
+            --body 'Automated pull request to update ARCs and assets files in devportal repo'
+        env:
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
