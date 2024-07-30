@@ -60,10 +60,12 @@ jobs:
           git config --global user.email 'github-actions@github.com'
           git checkout -b update-arcs-${{ github.sha }}
           mkdir -p src/content/docs/reference/ARCs
-          cp -r ../ARCs/* src/content/docs/reference/ARCs/
-          git add src/content/docs/reference/ARCs
-          git commit -m "Update ARCs files"
-          git push origin update-arcs-${{ github.sha }}
+          cp -r ../ARCs/* src/content/docs/standards/ARCs/
+          find ../assets -type d -name "css" -prune -o -type f -exec cp --parents {} src/content/docs/standards/assets/ \;
+          git add src/content/docs/standards/ARCs
+          git add src/content/docs/standards/assets
+          git commit -m "Update ARCs and assets files"
+          git push origin update-content-${{ github.sha }}
 
       - name: Create Pull Request in devportal repo
         if: env.changed_files != ''
@@ -72,7 +74,7 @@ jobs:
             --repo SudoWeezy/devportal \
             --head update-arcs-${{ github.sha }} \
             --base devrel-content \
-            --title 'Update ARCs files' \
+            --title 'Update ARCs and assets files' \
             --body 'Automated pull request to update ARCs files in devportal repo'
         env:
           GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
