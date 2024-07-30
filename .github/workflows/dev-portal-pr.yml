@@ -62,7 +62,8 @@ jobs:
           mkdir -p src/content/docs/standards/ARCs
           mkdir -p src/content/docs/standards/assets
           cp -r ../ARCs/* src/content/docs/standards/ARCs/
-          find ../assets -type d -name "css" -prune -o -type f -exec cp --parents {} src/content/docs/standards/assets/ \;
+          cp -r ../assets/* src/content/docs/standards/assets/
+          rm -rf src/content/docs/standards/assets/css
           git add src/content/docs/standards/ARCs
           git add src/content/docs/standards/assets
           git commit -m "Update ARCs and assets files"
