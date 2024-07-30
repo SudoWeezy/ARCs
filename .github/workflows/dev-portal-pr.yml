@@ -68,6 +68,7 @@ jobs:
       - name: Update Markdown files in ARCs folder
         if: env.changed_files != ''
         run: |
+          cd devportal
           find src/content/docs/standards/ARCs -name "arc-*.md" -exec sed -i 's|\.\./assets/arc-|./assets/arc-|g' {} +
 
       - name: Commit and push changes
