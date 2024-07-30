@@ -64,9 +64,19 @@ jobs:
           mkdir -p src/content/docs/standards/assets
           cp -r ../ARCs/* src/content/docs/standards/ARCs/
           find ../assets -type d -name "css" -prune -o -type f -exec cp --parents {} src/content/docs/standards/assets/ \;
+
+      - name: Update Markdown files in ARCs folder
+        if: env.changed_files != ''
+        run: |
+          find src/content/docs/standards/ARCs -name "arc-*.md" -exec sed -i 's|\.\./assets/arc-|./assets/arc-|g' {} +
+
+      - name: Commit and push changes
+        if: env.changed_files != ''
+        run: |
+          cd devportal
           git add src/content/docs/standards/ARCs
           git add src/content/docs/standards/assets
-          git commit -m "Update ARCs and assets files"
+          git commit -m "Update ARCs and assets files, and update paths in Markdown files"
           git push origin update-content-${{ github.sha }}
 
       - name: Create Pull Request in devportal repo
