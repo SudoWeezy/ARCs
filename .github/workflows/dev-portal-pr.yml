@@ -59,7 +59,8 @@ jobs:
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
           git checkout -b update-arcs-${{ github.sha }}
-          mkdir -p src/content/docs/reference/ARCs
+          mkdir -p src/content/docs/standards/ARCs
+          mkdir -p src/content/docs/standards/assets
           cp -r ../ARCs/* src/content/docs/standards/ARCs/
           find ../assets -type d -name "css" -prune -o -type f -exec cp --parents {} src/content/docs/standards/assets/ \;
           git add src/content/docs/standards/ARCs
