@@ -66,6 +66,8 @@ jobs:
         run: |
           for file in ARCs/*.md; do
             status=$(grep '^status: ' "$file" | sed 's/status: //')
+            filename=$(basename -- "$file")
+            arc_label="${filename%.*}"
             case $status in
               "Final"|"Living")
                 variant="success"
@@ -80,10 +82,10 @@ jobs:
                 variant="danger"
                 ;;
               *)
-                variant="note"
+                variant="tip"
                 ;;
             esac
-            sed -i "/^status: /a sidebar:\n  badge:\n    text: $status\n    variant: $variant" "$file"
+            sed -i "/^status: /a sidebar:\n  label: $arc_label\n  badge:\n    text: $status\n    variant: $variant" "$file"
             sed -i "/^status: /d" "$file"
           done
 
