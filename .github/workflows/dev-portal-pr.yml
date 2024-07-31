@@ -59,7 +59,6 @@ jobs:
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
           git checkout -b update-content-${{ github.sha }}
-          mkdir -p src/content/docs/standards/arcs
 
       - name: Remove H1 headers from markdown files
         if: env.changed_files != ''
@@ -67,10 +66,17 @@ jobs:
           # Remove H1 headers from each markdown file in ARCs directory
           find ARCs -name "*.md" -exec sed -i '/^# /d' {} +
 
-      - name: Copy files to devportal repo
+      - name: Copy and organize files by status
         if: env.changed_files != ''
         run: |
-          cp -r ARCs/* devportal/src/content/docs/standards/arcs/
+          for file in ARCs/*.md; do
+            status=$(grep '^status: ' "$file" | sed 's/status: //')
+            if [ -z "$status" ]; then
+              status="Unknown"
+            fi
+            mkdir -p "devportal/src/content/docs/standards/arcs/$status"
+            cp "$file" "devportal/src/content/docs/standards/arcs/$status/"
+          done
 
       - name: Update Markdown files in ARCs folder
         if: env.changed_files != ''
