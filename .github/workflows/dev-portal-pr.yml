@@ -6,7 +6,6 @@ on:
       - main
     paths:
       - "ARCs/**"
-      - "assets/**"
 
 jobs:
   createPR:
@@ -61,7 +60,17 @@ jobs:
           git config --global user.email 'github-actions@github.com'
           git checkout -b update-content-${{ github.sha }}
           mkdir -p src/content/docs/standards/arcs
-          cp -r ../ARCs/* src/content/docs/standards/arcs/
+
+      - name: Remove H1 headers from markdown files
+        if: env.changed_files != ''
+        run: |
+          # Remove H1 headers from each markdown file in ARCs directory
+          find ARCs -name "*.md" -exec sed -i '/^# /d' {} +
+
+      - name: Copy files to devportal repo
+        if: env.changed_files != ''
+        run: |
+          cp -r ARCs/* devportal/src/content/docs/standards/arcs/
 
       - name: Update Markdown files in ARCs folder
         if: env.changed_files != ''
