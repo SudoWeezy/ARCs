@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "ARCs/**"
+      - "assets/**"
 
 jobs:
   createPR:
@@ -60,23 +61,36 @@ jobs:
           git config --global user.email 'github-actions@github.com'
           git checkout -b update-content-${{ github.sha }}
 
-      - name: Remove H1 headers from markdown files
-        if: env.changed_files != ''
-        run: |
-          # Remove H1 headers from each markdown file in ARCs directory
-          find ARCs -name "*.md" -exec sed -i '/^# /d' {} +
-
-      - name: Copy and organize files by status
+      - name: Modify headers in markdown files
         if: env.changed_files != ''
         run: |
           for file in ARCs/*.md; do
             status=$(grep '^status: ' "$file" | sed 's/status: //')
-            if [ -z "$status" ]; then
-              status="Unknown"
-            fi
-            mkdir -p "devportal/src/content/docs/standards/arcs/$status"
-            cp "$file" "devportal/src/content/docs/standards/arcs/$status/"
+            case $status in
+              "Final"|"Living")
+                variant="success"
+                ;;
+              "Draft")
+                variant="caution"
+                ;;
+              "Last Call")
+                variant="note"
+                ;;
+              "Withdrawn")
+                variant="danger"
+                ;;
+              *)
+                variant="note"
+                ;;
+            esac
+            sed -i "/^status: /a sidebar:\n  badge:\n    text: $status\n    variant: $variant" "$file"
+            sed -i "/^status: /d" "$file"
           done
+
+      - name: Copy files to devportal repo
+        if: env.changed_files != ''
+        run: |
+          cp -r ARCs/* devportal/src/content/docs/standards/arcs/
 
       - name: Update Markdown files in ARCs folder
         if: env.changed_files != ''
