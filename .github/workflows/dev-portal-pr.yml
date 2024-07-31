@@ -60,24 +60,21 @@ jobs:
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
           git checkout -b update-content-${{ github.sha }}
-          mkdir -p src/content/docs/standards/ARCs
-          mkdir -p src/content/docs/standards/assets
-          cp -r ../ARCs/* src/content/docs/standards/ARCs/
-          find ../assets -type d -name "css" -prune -o -type f -exec cp --parents {} src/content/docs/standards/assets/ \;
+          mkdir -p src/content/docs/standards/arcs
+          cp -r ../ARCs/* src/content/docs/standards/arcs/
 
       - name: Update Markdown files in ARCs folder
         if: env.changed_files != ''
         run: |
           cd devportal
-          find src/content/docs/standards/ARCs -name "arc-*.md" -exec sed -i 's|\.\./assets/arc-|./assets/arc-|g' {} +
+          find src/content/docs/standards/arcs -name "arc-*.md" -exec sed -i 's|\.\./assets/arc-|https://github.com/algorandfoundation/ARCs/tree/main/assets/arc-|g' {} +
 
       - name: Commit and push changes
         if: env.changed_files != ''
         run: |
           cd devportal
-          git add src/content/docs/standards/ARCs
-          git add src/content/docs/standards/assets
-          git commit -m "Update ARCs and assets files, and update paths in Markdown files"
+          git add src/content/docs/standards/arcs
+          git commit -m "Update ARCs and update paths in Markdown files"
           git push origin update-content-${{ github.sha }}
 
       - name: Create Pull Request in devportal repo
@@ -88,6 +85,6 @@ jobs:
             --head update-content-${{ github.sha }} \
             --base devrel-content \
             --title 'Update ARCs and assets files' \
-            --body 'Automated pull request to update ARCs and assets files in devportal repo'
+            --body 'Automated pull request to update ARCs files in devportal repo'
         env:
           GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
