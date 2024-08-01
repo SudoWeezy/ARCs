@@ -1,4 +1,4 @@
-name: Auto Create Pull Request
+name: Trigger Devportal Update
 
 on:
   push:
@@ -8,112 +8,13 @@ on:
       - "ARCs/**"
 
 jobs:
-  createPR:
+  notifyDevportal:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout ARCs repository
-        uses: actions/checkout@v2
+      - name: Repository Dispatch
+        uses: peter-evans/repository-dispatch@v1
         with:
-          fetch-depth: 2
-
-      - name: Check for added or modified files
-        id: check_changes
-        run: |
-          set -e
-
-          # Ensure the previous commit reference is valid
-          if [ "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ]; then
-            base_commit=$(git rev-list --max-parents=0 HEAD)
-          else
-            base_commit=${{ github.event.before }}
-          fi
-
-          echo "Base commit: $base_commit"
-          echo "Current commit: ${{ github.sha }}"
-
-          # Get the list of added or modified files
-          changed_files=$(git diff --name-only $base_commit ${{ github.sha }})
-          echo "Changed files: $changed_files"
-
-          # Check if any changed files are in the ARCs or assets folder
-          relevant_files=$(echo "$changed_files" | grep -E '^ARCs/|^assets/' || true)
-          echo "Relevant files: $relevant_files"
-
-          # Output the result
-          if [ -n "$relevant_files" ]; then
-            echo "changed_files=$relevant_files" >> $GITHUB_ENV
-          else
-            echo "No relevant files changed."
-          fi
-
-      - name: Clone devportal repository
-        if: env.changed_files != ''
-        run: |
-          git clone --single-branch --branch devrel-content https://${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/SudoWeezy/devportal devportal
-
-      - name: Create a new branch in devportal repo
-        if: env.changed_files != ''
-        run: |
-          cd devportal
-          git config --global user.name 'github-actions'
-          git config --global user.email 'github-actions@github.com'
-          git checkout -b update-content-${{ github.sha }}
-
-      - name: Modify headers in markdown files
-        if: env.changed_files != ''
-        run: |
-          for file in ARCs/*.md; do
-            status=$(grep '^status: ' "$file" | sed 's/status: //')
-            filename=$(basename -- "$file")
-            arc_label="${filename%.*}"
-            case $status in
-              "Final"|"Living")
-                variant="success"
-                ;;
-              "Draft")
-                variant="caution"
-                ;;
-              "Last Call")
-                variant="note"
-                ;;
-              "Withdrawn")
-                variant="danger"
-                ;;
-              *)
-                variant="tip"
-                ;;
-            esac
-            sed -i "/^status: /a sidebar:\n  label: $arc_label\n  badge:\n    text: $status\n    variant: $variant" "$file"
-          done
-
-      - name: Copy files to devportal repo
-        if: env.changed_files != ''
-        run: |
-          cp -r ARCs/* devportal/src/content/docs/standards/arcs/
-
-      - name: Update Markdown files in ARCs folder
-        if: env.changed_files != ''
-        run: |
-          cd devportal
-          find src/content/docs/standards/arcs -name "arc-*.md" -exec sed -i 's|\.\./assets/arc-|https://raw.githubusercontent.com/algorandfoundation/ARCs/main/assets/arc-|g' {} +
-
-      - name: Commit and push changes
-        if: env.changed_files != ''
-        run: |
-          cd devportal
-          git add src/content/docs/standards/arcs
-          git commit -m "Update ARCs and update paths in Markdown files"
-          git push origin update-content-${{ github.sha }}
-
-      - name: Create Pull Request in devportal repo
-        if: env.changed_files != ''
-        run: |
-          gh pr create \
-            --repo SudoWeezy/devportal \
-            --head update-content-${{ github.sha }} \
-            --base devrel-content \
-            --title 'Update ARCs and assets files' \
-            --body 'Automated pull request to update ARCs files in devportal repo'
-        env:
-          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }} # This token must have repo scope and must be set in your ARC's repo secrets
+          repository: SudoWeezy/devportal # Target repository
+          event-type: update-arcs # This should match the type in the devportal repository's workflow
