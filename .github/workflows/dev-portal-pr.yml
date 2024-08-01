@@ -3,7 +3,7 @@ name: Auto Update Devportal Content
 on:
   push:
     branches:
-      - main # Trigger on changes to the main branch
+      - ARCs # Trigger on changes to the main branch
     paths:
       - "ARCs/**" # Only run when files in the ARCs directory are changed
 
