@@ -73,14 +73,15 @@ jobs:
           cd devportal
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
-          git add .
-          git commit -m "Auto-update ARC content and headers"
+          git add -A  # Ensure all changes are staged
+          echo "Git status before commit:"
+          git status  # Display git status for debugging
           if [ -n "$(git status --porcelain)" ]; then
+            git commit -m "Auto-update ARC content and headers"
             git push origin devrel-content
           else
             echo "No changes to commit."
           fi
-
       - name: Clean up
         run: |
           rm -rf ARCs devportal
