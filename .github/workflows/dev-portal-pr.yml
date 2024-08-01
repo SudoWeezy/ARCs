@@ -19,7 +19,7 @@ jobs:
 
       - name: Clone devportal repository
         run: |
-          git clone --branch devrel-content https://${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/SudoWeezy/devportal.git devportal
+          git clone --branch devrel-content https://${{ secrets.DISPATCH_TOKEN }}@github.com/SudoWeezy/devportal.git devportal
 
       - name: Copy ARCs to devportal
         run: |
