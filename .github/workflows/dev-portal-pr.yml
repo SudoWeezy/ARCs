@@ -6,7 +6,6 @@ on:
       - main
     paths:
       - "ARCs/**"
-      - "assets/**"
 
 jobs:
   createPR:
@@ -86,7 +85,6 @@ jobs:
                 ;;
             esac
             sed -i "/^status: /a sidebar:\n  label: $arc_label\n  badge:\n    text: $status\n    variant: $variant" "$file"
-            sed -i "/^status: /d" "$file"
           done
 
       - name: Copy files to devportal repo
