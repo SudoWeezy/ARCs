@@ -1,0 +1,23 @@
+name: Trigger Devportal Update
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "ARCs/**"
+
+jobs:
+  notifyDevportal:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger devportal update
+        if: github.ref == 'refs/heads/main' # Ensure this only runs on the main branch
+        run: |
+          curl -X POST -H "Authorization: token ${DISPATCH_TOKEN}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/SudoWeezy/devportal/dispatches" \
+            -d '{"event_type": "update-arcs"}'
+        env:
+          DISPATCH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
