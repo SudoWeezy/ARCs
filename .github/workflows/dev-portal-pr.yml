@@ -1,23 +1,86 @@
-name: Trigger Devportal Update
+name: Auto Update Devportal Content
 
 on:
   push:
     branches:
-      - main
+      - main # Trigger on changes to the main branch
     paths:
-      - "ARCs/**"
+      - "ARCs/**" # Only run when files in the ARCs directory are changed
 
 jobs:
-  notifyDevportal:
+  updateDevportal:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Trigger devportal update
-        if: github.ref == 'refs/heads/main' # Ensure this only runs on the main branch
+      - name: Checkout ARCs repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+
+      - name: Clone devportal repository
         run: |
-          curl -X POST -H "Authorization: token ${DISPATCH_TOKEN}" \
-            -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/repos/SudoWeezy/devportal/dispatches" \
-            -d '{"event_type": "update-arcs"}'
-        env:
-          DISPATCH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
+          git clone --branch devrel-content https://${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/SudoWeezy/devportal.git devportal
+
+      - name: Copy ARCs to devportal
+        run: |
+          echo "Contents of ARCs directory:"
+          ls ARCs/
+          echo "Contents of target directory before copy:"
+          ls devportal/src/content/docs/standards/arcs/
+          cp -r ARCs/* devportal/src/content/docs/standards/arcs/
+          echo "Contents of target directory after copy:"
+          ls devportal/src/content/docs/standards/arcs/
+
+      - name: Modify headers in markdown files
+        run: |
+          set -e  # Stop the script if any command fails
+          cd devportal/src/content/docs/standards/arcs || { echo "Directory not found"; exit 1; }
+          for file in arc-*.md; do
+            if [[ -f "$file" ]]; then
+              status=$(grep '^status: ' "$file" | sed 's/status: //')
+              filename=$(basename -- "$file")
+              arc_label="${filename%.*}"
+              case $status in
+                "Final")
+                  variant="success"
+                  ;;
+                "Draft")
+                  variant="caution"
+                  ;;
+                "Last Call")
+                  variant="note"
+                  ;;
+                "Withdrawn")
+                  variant="danger"
+                  ;;
+                *)
+                  variant="tip"
+                  ;;
+              esac
+              sed -i "/^status: /a sidebar:\n  label: $arc_label\n  badge:\n    text: $status\n    variant: $variant" "$file"
+            else
+              echo "No markdown files found matching pattern 'arc-*.md'"
+            fi
+          done
+
+      - name: Update Markdown files in ARCs folder
+        run: |
+          cd devportal/src/content/docs/standards/arcs
+          find . -name "arc-*.md" -exec sed -i 's|\.\./assets/arc-|https://raw.githubusercontent.com/algorandfoundation/ARCs/main/assets/arc-|g' {} +
+
+      - name: Commit changes to the devrel-content branch
+        run: |
+          cd devportal
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+          git add .
+          git commit -m "Auto-update ARC content and headers"
+          if [ -n "$(git status --porcelain)" ]; then
+            git push origin devrel-content
+          else
+            echo "No changes to commit."
+          fi
+
+      - name: Clean up
+        run: |
+          rm -rf ARCs devportal
