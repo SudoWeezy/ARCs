@@ -12,9 +12,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Repository Dispatch
-        uses: peter-evans/repository-dispatch@v1
-        with:
-          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }} # This token must have repo scope and must be set in your ARC's repo secrets
-          repository: SudoWeezy/devportal # Target repository
-          event-type: update-arcs # This should match the type in the devportal repository's workflow
+      - name: Trigger devportal update
+        if: github.ref == 'refs/heads/main' # Ensure this only runs on the main branch
+        run: |
+          curl -X POST -H "Authorization: token ${DISPATCH_TOKEN}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/SudoWeezy/devportal/dispatches" \
+            -d '{"event_type": "update-arcs"}'
+        env:
+          DISPATCH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
