@@ -100,7 +100,7 @@ jobs:
         id: changed_files
         run: |
           # Get the list of files changed in the PR and store it in a variable
-          git fetch origin ${{ github.event.pull_request.base.ref }}
+          git fetch --no-tags --prune --unshallow origin
           git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD > changed_files.txt
           # Filter files to only include the ones in ARCs directory and save them to another file
           grep '^ARCs/' changed_files.txt || echo "No files in ARCs changed" > changed_arcs_files.txt
